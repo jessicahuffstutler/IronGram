@@ -88,8 +88,13 @@ public class IronGramController {
             throw new Exception("Receiver name doesn't exist.");
         }
 
+        if (!photo.getContentType().startsWith("image")) {
+            throw new Exception("Only images can be uploaded.");
+        }
+
         //grab file and save to right spot on the disc
-        File photoFile = File.createTempFile("photo", ".jpg", new File("public")); //prefix, suffix and where the file is saved
+        //hello.png => hello847598374592hello.png
+        File photoFile = File.createTempFile("photo", photo.getOriginalFilename(), new File("public")); //prefix, suffix and where the file is saved
         FileOutputStream fos = new FileOutputStream(photoFile);
         fos.write(photo.getBytes()); //save all those bytes into that temporary file
 
