@@ -20,6 +20,8 @@ import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by jessicahuffstutler on 11/17/15.
@@ -72,7 +74,7 @@ public class IronGramController {
             HttpSession session,
             HttpServletResponse response,
             String receiver,
-            Integer deleteTime,
+            int deleteTime, //could have @RequestParam(defaultValue = "10") to auto decide 10 seconds for the user that can be changed
             boolean isPublic,
             MultipartFile photo
     ) throws Exception {
@@ -123,10 +125,12 @@ public class IronGramController {
         List<Photo> photoList = photos.findByReceiver(user);
 
         for (Photo p : photoList) {
-            if(p.viewTime == null) {
-                p.viewTime = LocalDateTime.now();
-                photos.save(p);
-            } else if (p.viewTime.isBefore(LocalDateTime.now().minusSeconds(p.deleteTime))) {
+            if(p.viewTime == null) { //if it's null, then it's the first time we are looking at the photo
+                p.viewTime = LocalDateTime.now(); //so set the viewtime to now.
+                photos.save(p); //save it to the database
+                //below: delete file with thread technique or timer technique
+                // waitToDelete(p, 10); //from "waitToDelete" method below alt to
+            } else if (p.viewTime.isBefore(LocalDateTime.now().minusSeconds(p.deleteTime))) { //if y < (x-10), delete
                 photos.delete(p);
                 File tempImg = new File("public", p.filename);
                 tempImg.delete();
@@ -136,10 +140,46 @@ public class IronGramController {
         return photos.findByReceiver(user); //this is just data about the photo, not the photo itself.
     }
 
-    @RequestMapping("/public-photos")
-    public List<Photo> publicPhotos(String username) throws Exception {
+    public void waitToDelete(Photo photo, int seconds) {
+        //Thread technique
+        /*
+        Thread t = new Thread(() -> { //takes lambda, 0 arguments
+            try {
+                Thread.sleep(seconds * 1000); //surround with try catch, because you cant add exception to method signature
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            photos.delete(photo);
+            File f = new File("public", photo.filename);
+            f.delete();
+        });
+        t.start();
+        */
 
-        User user = users.findOneByUsername(username);
+        //Timer technique
+        Timer t = new Timer();
+        t.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                photos.delete(photo);
+                File f = new File("public", photo.filename);
+                f.delete();
+            }
+        }, seconds * 1000);
+    }
+
+    //public photos that a specific user sent
+    @RequestMapping("/public-photos")
+    public List<Photo> publicPhotos(String username) throws Exception { //list of Photo objects
+        //you don't need to be logged in because this is meant to be public
+
+        User user = users.findOneByUsername(username); //get user from database
+
+        /* Notes from class
+        List<Photo> photoList = photos.findBySender(user); //get images from database
+
+        //filter out the private photos
+        */
 
         ArrayList<Photo> publicList = new ArrayList();
         for(Photo p : photos.findBySender(user)){

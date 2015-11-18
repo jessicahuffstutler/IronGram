@@ -26,6 +26,7 @@ public class Photo {
     @Column(nullable = false)
     public String filename;
 
+    //dont put nullable = false, because it will be null until the image is viewed
     @Column
     public LocalDateTime viewTime;
 

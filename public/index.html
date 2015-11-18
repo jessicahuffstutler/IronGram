@@ -22,7 +22,7 @@
 <form action="/upload" method="post" enctype="multipart/form-data" id="upload" hidden>
     <input type="text" placeholder="Receiver Name" name="receiver"/>
     <input type="number" placeholder="Seconds to view" name="deleteTime"/>
-    Public:<input type="checkbox" name="isPublic"/>
+    <input type="checkbox" name="isPublic" id="isPublic"/> <label for="isPublic">Public Image?</label>
     <input type="file" name="photo"/>
     <button type="submit">Upload</button>
 </form>
