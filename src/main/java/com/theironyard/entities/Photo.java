@@ -28,4 +28,7 @@ public class Photo {
 
     @Column
     public LocalDateTime viewTime;
+
+    @Column(nullable = false)
+    public boolean isPublic;
 }
