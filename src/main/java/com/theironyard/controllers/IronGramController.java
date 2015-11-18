@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -70,6 +71,7 @@ public class IronGramController {
             HttpSession session,
             HttpServletResponse response,
             String receiver,
+            Integer deleteTime,
             MultipartFile photo
     ) throws Exception {
         String username = (String) session.getAttribute("username");
@@ -93,6 +95,7 @@ public class IronGramController {
         p.sender = senderUser;
         p.receiver = receiverUser;
         p.filename = photoFile.getName(); //gets file name that it randomly generated for you
+        p.deleteTime = deleteTime;
         photos.save(p);
 
         response.sendRedirect("/");
@@ -108,6 +111,19 @@ public class IronGramController {
         }
 
         User user = users.findOneByUsername(username);
+
+        List<Photo> photoList = photos.findByReceiver(user);
+
+        for (Photo p : photoList) {
+            if(p.viewTime == null) {
+                p.viewTime = LocalDateTime.now();
+                photos.save(p);
+            } else if (p.viewTime.isBefore(LocalDateTime.now().minusSeconds(p.deleteTime))) {
+                photos.delete(p);
+                File tempImg = new File("public", p.filename);
+                tempImg.delete();
+            }
+        }
 
         return photos.findByReceiver(user); //this is just data about the photo, not the photo itself.
     }
